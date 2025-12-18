@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import '../App.css'; // Ensure styles are loaded
+import API from '../api'; // <--- IMPORT THE HELPER (replacing axios)
+import '../App.css'; 
 
 const Login = ({ setUser }) => {
-  // Toggle between 'MD' (Admin) and 'Agent'
   const [activeTab, setActiveTab] = useState('MD'); 
   const [isRegistering, setIsRegistering] = useState(false);
   
@@ -23,29 +22,27 @@ const Login = ({ setUser }) => {
     setError('');
     setMessage('');
 
-    // Determine URL based on action
-    // If Registering, use register API. 
-    // If Logging in, use login API.
-    const url = isRegistering 
-      ? 'http://localhost:5000/api/auth/register' 
-      : 'http://localhost:5000/api/auth/login';
+    // --- UPDATED LOGIC ---
+    // We only need the ENDPOINT now, not the full URL.
+    // The 'API' helper already knows the base URL (Render).
+    const endpoint = isRegistering 
+      ? '/auth/register' 
+      : '/auth/login';
 
     try {
-      const res = await axios.post(url, formData);
+      // Use API.post instead of axios.post
+      const res = await API.post(endpoint, formData);
 
       if (isRegistering) {
         setMessage('Registration successful! Please wait for Admin approval.');
-        setIsRegistering(false); // Switch back to login view
+        setIsRegistering(false); 
       } else {
-        // LOGIN LOGIC
         const userData = res.data.user;
 
-        // Security Check: Prevent Agent from logging in via Admin Tab
         if (activeTab === 'MD' && userData.role !== 'MD') {
           setError("Access Denied: You are not an Admin.");
           return;
         }
-        // Security Check: Prevent Admin from logging in via Agent Tab (Optional, but good UX)
         if (activeTab === 'Agent' && userData.role !== 'Agent') {
            setError("Please use the Admin Login tab.");
            return;
@@ -99,8 +96,6 @@ const Login = ({ setUser }) => {
 
       {/* 3. THE FORM */}
       <form onSubmit={handleSubmit}>
-        
-        {/* Only show Name field if Registering as Agent */}
         {isRegistering && activeTab === 'Agent' && (
           <>
             <label>Full Name</label>
