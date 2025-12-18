@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import API from '../api'; // <--- UPDATED IMPORT
 import { useToast } from '../context/ToastContext';
 
 const AgentDashboard = ({ user }) => {
@@ -13,13 +13,15 @@ const AgentDashboard = ({ user }) => {
   const [formData, setFormData] = useState({ status: 'Booked', customerName: '', customerMobile: '' });
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/projects').then(res => setProjects(res.data));
+    // UPDATED: Remove localhost
+    API.get('/projects').then(res => setProjects(res.data));
   }, []);
 
   const handleProjectSelect = async (projectId) => {
     setSelectedProject(projectId);
     try {
-      const res = await axios.get(`http://localhost:5000/api/projects/${projectId}/plots`);
+      // UPDATED: Remove localhost
+      const res = await API.get(`/projects/${projectId}/plots`);
       setPlots(res.data);
       setSelectedPlot(null); 
     } catch (err) { console.error(err); }
@@ -28,14 +30,15 @@ const AgentDashboard = ({ user }) => {
   const handleSubmitRequest = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/requests', {
+      // UPDATED: Remove localhost
+      await API.post('/requests', {
         agentId: user.id,
         agentName: user.name,
         projectId: selectedProject,
         plotId: selectedPlot._id,
         requestedStatus: formData.status,
         customerName: formData.customerName,
-        customerMobile: formData.customerMobile // Optional
+        customerMobile: formData.customerMobile
       });
       
       addToast('Request Sent Successfully!', 'success');
@@ -53,7 +56,6 @@ const AgentDashboard = ({ user }) => {
         <p style={{color:'var(--text-muted)'}}>Welcome, {user.name}</p>
       </div>
 
-      {/* VIEW 1: PROJECT LIST */}
       {!selectedProject && (
         <div className="card-grid">
           {projects.map(p => (
@@ -67,7 +69,6 @@ const AgentDashboard = ({ user }) => {
         </div>
       )}
 
-      {/* VIEW 2: PLOT GRID */}
       {selectedProject && (
         <div>
           <button className="btn btn-secondary" onClick={() => setSelectedProject(null)} style={{ width: 'auto', marginBottom: '20px' }}>
@@ -91,7 +92,6 @@ const AgentDashboard = ({ user }) => {
         </div>
       )}
 
-      {/* MODAL: UPDATE REQUEST */}
       {selectedPlot && (
         <div className="modal-overlay" onClick={() => setSelectedPlot(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
