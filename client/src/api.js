@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// Automatically switches between Localhost and Production URL
+// We are now forcing the app to ALWAYS talk to the live Render server.
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: 'https://plot-ux2o.onrender.com/api', 
 });
 
 export default API;
