@@ -1,60 +1,106 @@
 import { useState } from 'react';
-import axios from 'axios';
+import API from '../api'; // <--- UPDATED IMPORT
 import { useToast } from '../context/ToastContext';
 
 const Settings = ({ user, toggleTheme, isDarkMode }) => {
   const { addToast } = useToast();
   
-  const [profileData, setProfileData] = useState({ 
-    name: user?.name || '', 
-    email: user?.email || '',
+  const [formData, setFormData] = useState({
+    name: user.name,
+    email: user.email,
     currentPassword: '',
     newPassword: ''
   });
 
-  const handleUpdate = async (e) => {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/auth/update-profile/${user.id}`, profileData);
-      addToast('Profile Updated Successfully!', 'success');
-      // Clear sensitive fields
-      setProfileData(prev => ({ ...prev, currentPassword: '', newPassword: '' }));
+      // UPDATED: Use API.put
+      await API.put(`/auth/update-profile/${user.id}`, formData);
+      
+      addToast('Profile Updated Successfully', 'success');
+      
+      // Clear password fields for security
+      setFormData({ ...formData, currentPassword: '', newPassword: '' });
+      
+      // Update local storage user data (optional, but good for UI consistency)
+      const updatedUser = { ...user, name: formData.name, email: formData.email };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
     } catch (err) {
-      addToast(err.response?.data?.message || 'Update Failed', 'error');
+      const errMsg = err.response?.data?.message || 'Update Failed';
+      addToast(errMsg, 'error');
     }
   };
 
   return (
-    <div style={{maxWidth: '600px', margin: '0 auto'}}>
+    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
       <h1 className="section-title">Settings</h1>
 
-      {/* THEME */}
-      <div className="card" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
-        <span>Dark Mode</span>
-        <button onClick={toggleTheme} className="btn" style={{background: isDarkMode ? '#f59e0b' : '#374151'}}>
-          {isDarkMode ? 'Turn Off' : 'Turn On'}
-        </button>
+      {/* THEME SETTINGS */}
+      <div className="card" style={{ marginBottom: '20px' }}>
+        <h3>Appearance</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Dark Mode</span>
+          <button className="btn" onClick={toggleTheme} style={{ background: isDarkMode ? '#333' : '#ddd', color: isDarkMode ? '#fff' : '#000' }}>
+            {isDarkMode ? 'Turn Off' : 'Turn On'}
+          </button>
+        </div>
       </div>
 
-      {/* PROFILE FORM */}
+      {/* PROFILE SETTINGS */}
       <div className="card">
-        <h3>👤 Update Profile</h3>
-        <form onSubmit={handleUpdate} style={{marginTop:'20px'}}>
+        <h3>Edit Profile</h3>
+        <form onSubmit={handleUpdateProfile}>
           <label>Full Name</label>
-          <input value={profileData.name} onChange={e => setProfileData({...profileData, name: e.target.value})} />
-          
+          <input 
+            type="text" 
+            name="name" 
+            value={formData.name} 
+            onChange={handleChange} 
+          />
+
           <label>Email Address</label>
-          <input type="email" value={profileData.email} onChange={e => setProfileData({...profileData, email: e.target.value})} />
+          <input 
+            type="email" 
+            name="email" 
+            value={formData.email} 
+            onChange={handleChange} 
+          />
 
-          <hr style={{margin:'20px 0', borderColor:'var(--border)'}} />
+          <hr style={{ border: '0', borderTop: '1px solid var(--border)', margin: '20px 0' }} />
           
-          <label>New Password (Leave blank to keep current)</label>
-          <input type="password" placeholder="New Password" value={profileData.newPassword} onChange={e => setProfileData({...profileData, newPassword: e.target.value})} />
-          
-          <label>Current Password (Required to save changes)</label>
-          <input type="password" required placeholder="Verify Identity" value={profileData.currentPassword} onChange={e => setProfileData({...profileData, currentPassword: e.target.value})} />
+          <h4 style={{ marginTop: 0 }}>Change Password</h4>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            Enter your current password to confirm changes. Leave "New Password" blank if you don't want to change it.
+          </p>
 
-          <button type="submit" className="btn" style={{width:'100%'}}>Save Changes</button>
+          <label>Current Password (Required)</label>
+          <input 
+            type="password" 
+            name="currentPassword" 
+            value={formData.currentPassword} 
+            onChange={handleChange} 
+            required
+            placeholder="Enter current password"
+          />
+
+          <label>New Password (Optional)</label>
+          <input 
+            type="password" 
+            name="newPassword" 
+            value={formData.newPassword} 
+            onChange={handleChange} 
+            placeholder="Enter new password"
+          />
+
+          <button type="submit" className="btn" style={{ width: '100%', marginTop: '10px' }}>
+            Update Profile
+          </button>
         </form>
       </div>
     </div>

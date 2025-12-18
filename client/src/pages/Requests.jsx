@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import API from '../api'; // <--- UPDATED IMPORT
 import { useToast } from '../context/ToastContext';
 
 const Requests = () => {
@@ -15,8 +15,9 @@ const Requests = () => {
   const fetchData = async () => {
     try {
       const [resAgents, resPlots] = await Promise.all([
-        axios.get('http://localhost:5000/api/auth/pending-agents'),
-        axios.get('http://localhost:5000/api/requests')
+        // UPDATED: Use API helper
+        API.get('/auth/pending-agents'),
+        API.get('/requests')
       ]);
       setAgentRequests(resAgents.data);
       setPlotRequests(resPlots.data);
@@ -31,7 +32,8 @@ const Requests = () => {
   // --- HANDLERS ---
   const handleApproveAgent = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/auth/approve-agent/${id}`);
+      // UPDATED: Use API.put
+      await API.put(`/auth/approve-agent/${id}`);
       addToast('Agent Approved!', 'success');
       fetchData();
     } catch (err) { addToast('Action Failed', 'error'); }
@@ -39,7 +41,8 @@ const Requests = () => {
 
   const handlePlotAction = async (id, action) => {
     try {
-      await axios.put(`http://localhost:5000/api/requests/${id}/action`, { action });
+      // UPDATED: Use API.put
+      await API.put(`/requests/${id}/action`, { action });
       addToast(`Request ${action}`, action === 'Approved' ? 'success' : 'error');
       fetchData();
     } catch (err) { addToast('Action Failed', 'error'); }
