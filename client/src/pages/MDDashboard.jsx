@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import API from '../api'; // <--- UPDATED IMPORT
+import API from '../api'; // <--- IMPORT HELPER
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 
@@ -11,6 +11,7 @@ const MDDashboard = () => {
   const [allPlots, setAllPlots] = useState([]);
   const [newProject, setNewProject] = useState({ name: '', location: '', totalPlots: 0 });
   
+  // Stats
   const [stats, setStats] = useState({ totalPlots: 0, soldPlots: 0 });
   const [topAgents, setTopAgents] = useState([]);
 
@@ -18,18 +19,19 @@ const MDDashboard = () => {
 
   const fetchData = async () => {
     try {
-      // UPDATED: Remove localhost
+      // 1. Get Projects (using API helper)
       const resProj = await API.get('/projects');
       setProjects(resProj.data);
 
+      // 2. Get Plots for Stats
       let plotsList = [];
       for (let p of resProj.data) {
-        // UPDATED: Remove localhost
         const pPlots = await API.get(`/projects/${p._id}/plots`);
         plotsList = [...plotsList, ...pPlots.data];
       }
       setAllPlots(plotsList);
 
+      // 3. Calculate Logic
       let soldP = 0;
       let agentSales = {};
       plotsList.forEach(p => {
@@ -48,7 +50,6 @@ const MDDashboard = () => {
   const handleCreateProject = async (e) => {
     e.preventDefault();
     try {
-        // UPDATED: Remove localhost
         await API.post('/projects', newProject);
         addToast('Project Created Successfully', 'success');
         setNewProject({ name: '', location: '', totalPlots: 0 });
@@ -59,7 +60,6 @@ const MDDashboard = () => {
   const handleDeleteProject = async (id) => {
     if(!window.confirm("Delete project and all plots?")) return;
     try {
-        // UPDATED: Remove localhost
         await API.delete(`/projects/${id}`);
         addToast('Project Deleted', 'success');
         fetchData();

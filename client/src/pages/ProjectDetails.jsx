@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import API from '../api'; // <--- IMPORT HELPER
 import { useToast } from '../context/ToastContext';
 
 const ProjectDetails = ({ user }) => {
@@ -14,8 +14,8 @@ const ProjectDetails = ({ user }) => {
   
   // Selection & Modals
   const [selectedPlot, setSelectedPlot] = useState(null);
-  const [showManageModal, setShowManageModal] = useState(false); // New Modal State
-  const [manageCount, setManageCount] = useState(1); // Bulk Count Input
+  const [showManageModal, setShowManageModal] = useState(false); 
+  const [manageCount, setManageCount] = useState(1);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -32,22 +32,22 @@ const ProjectDetails = ({ user }) => {
 
   const fetchData = async () => {
     try {
-      const pRes = await axios.get('http://localhost:5000/api/projects');
+      const pRes = await API.get('/projects');
       setProject(pRes.data.find(p => p._id === id));
-      const plRes = await axios.get(`http://localhost:5000/api/projects/${id}/plots`);
+      const plRes = await API.get(`/projects/${id}/plots`);
       setPlots(plRes.data);
     } catch(err) { console.error(err); }
   };
 
   const fetchAgents = async () => {
-    const res = await axios.get('http://localhost:5000/api/auth/active-agents');
+    const res = await API.get('/auth/active-agents');
     setAgents(res.data);
   };
 
-  // --- BULK MANAGE LOGIC ---
+  // --- ACTIONS ---
   const handleBulkAdd = async () => {
     try {
-      await axios.post('http://localhost:5000/api/plots/bulk-add', { projectId: id, count: manageCount });
+      await API.post('/plots/bulk-add', { projectId: id, count: manageCount });
       addToast(`Added ${manageCount} Plots`, 'success');
       setShowManageModal(false);
       fetchData();
@@ -57,17 +57,13 @@ const ProjectDetails = ({ user }) => {
   const handleBulkDelete = async () => {
     if(!window.confirm(`Are you sure you want to delete the LAST ${manageCount} plots?`)) return;
     try {
-      // Axios delete requires 'data' key for body
-      await axios.delete('http://localhost:5000/api/plots/bulk-delete', { 
-        data: { projectId: id, count: manageCount } 
-      });
+      await API.delete('/plots/bulk-delete', { data: { projectId: id, count: manageCount } });
       addToast(`Deleted ${manageCount} Plots`, 'success');
       setShowManageModal(false);
       fetchData();
     } catch(err) { addToast(err.response?.data?.message || 'Failed', 'error'); }
   };
 
-  // --- SINGLE PLOT LOGIC ---
   const handlePlotClick = (plot) => {
     setSelectedPlot(plot);
     setFormData({
@@ -81,7 +77,7 @@ const ProjectDetails = ({ user }) => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/plots/${selectedPlot._id}`, formData);
+      await API.put(`/plots/${selectedPlot._id}`, formData);
       addToast('Plot Updated Successfully!', 'success');
       setSelectedPlot(null);
       fetchData(); 
@@ -91,7 +87,7 @@ const ProjectDetails = ({ user }) => {
   const handleDeleteSingle = async () => {
     if(!window.confirm("Delete this specific plot?")) return;
     try {
-        await axios.delete(`http://localhost:5000/api/plots/${selectedPlot._id}`);
+        await API.delete(`/plots/${selectedPlot._id}`);
         addToast('Plot Deleted', 'success');
         setSelectedPlot(null);
         fetchData();
@@ -122,7 +118,6 @@ const ProjectDetails = ({ user }) => {
         </div>
         
         {user.role === 'MD' && (
-          // UPDATED BUTTON
           <button className="btn" onClick={() => setShowManageModal(true)}>⚙️ Add / Delete Plots</button>
         )}
       </div>
@@ -171,7 +166,7 @@ const ProjectDetails = ({ user }) => {
       
       {filteredPlots.length === 0 && <p style={{textAlign:'center', marginTop:'40px'}}>No plots found.</p>}
 
-      {/* --- BULK MANAGE MODAL (NEW) --- */}
+      {/* --- BULK MANAGE MODAL --- */}
       {showManageModal && (
         <div className="modal-overlay" onClick={() => setShowManageModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
